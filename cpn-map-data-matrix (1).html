@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CPN-Map — Biobank Data Matrix</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.6.0/tabler-icons.min.css">
+<style>
+/* ============================================================
+   CPN-Map Biobank Data Matrix
+   ----------------------------------------------------------
+   HOW TO EDIT:
+   Scroll down to the <script> tag and find the DATA object.
+   Each cohort and each data layer is a plain JSON entry.
+   Change text, add cohorts, toggle availability — save & reload.
+   ============================================================ */
+
+:root {
+  --bg: #fafaf8;
+  --bg2: #f1efe8;
+  --bg-card: #ffffff;
+  --text: #1a1a18;
+  --text2: #5f5e5a;
+  --text3: #888780;
+  --border: rgba(0,0,0,.1);
+  --border2: rgba(0,0,0,.06);
+  --teal-50: #E1F5EE; --teal-600: #0F6E56; --teal-800: #085041;
+  --purple-50: #EEEDFE; --purple-600: #534AB7; --purple-800: #3C3489;
+  --coral-50: #FAECE7; --coral-600: #993C1D; --coral-800: #712B13;
+  --amber-50: #FAEEDA; --amber-600: #854F0B; --amber-800: #633806;
+  --green-50: #EAF3DE; --green-600: #3B6D11; --green-800: #27500A;
+  --blue-50: #E6F1FB; --blue-600: #185FA5; --blue-800: #0C447C;
+  --red-50: #FCEBEB; --red-600: #A32D2D; --red-800: #791F1F;
+  --gray-50: #F1EFE8; --gray-600: #5F5E5A; --gray-800: #444441;
+  --font: 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #1a1a18; --bg2: #2c2c2a; --bg-card: #232321;
+    --text: #e8e6de; --text2: #b4b2a9; --text3: #888780;
+    --border: rgba(255,255,255,.1); --border2: rgba(255,255,255,.04);
+    --teal-50: #085041; --teal-600: #5DCAA5; --teal-800: #9FE1CB;
+    --purple-50: #3C3489; --purple-600: #AFA9EC; --purple-800: #CECBF6;
+    --coral-50: #712B13; --coral-600: #F0997B; --coral-800: #F5C4B3;
+    --amber-50: #412402; --amber-600: #EF9F27; --amber-800: #FAC775;
+    --green-50: #27500A; --green-600: #97C459; --green-800: #C0DD97;
+    --blue-50: #0C447C; --blue-600: #85B7EB; --blue-800: #B5D4F4;
+    --red-50: #791F1F; --red-600: #F09595; --red-800: #F7C1C1;
+    --gray-50: #444441; --gray-600: #B4B2A9; --gray-800: #D3D1C7;
+  }
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--font); background: var(--bg); color: var(--text); line-height: 1.6; }
+.container { max-width: 1100px; margin: 0 auto; padding: 24px 20px; }
+h1 { font-size: 22px; font-weight: 600; margin-bottom: 4px; }
+.subtitle { font-size: 14px; color: var(--text2); margin-bottom: 6px; }
+.last-updated { font-size: 11px; color: var(--text3); margin-bottom: 24px; }
+
+/* Nav tabs */
+.nav { display: flex; gap: 4px; margin-bottom: 20px; flex-wrap: wrap; }
+.nav-btn {
+  padding: 7px 16px; font-size: 13px; font-family: var(--font);
+  border: 0.5px solid var(--border); border-radius: 8px;
+  background: transparent; color: var(--text2); cursor: pointer;
+  transition: all .15s;
+}
+.nav-btn:hover { background: var(--bg2); }
+.nav-btn.active { background: var(--purple-50); color: var(--purple-800); border-color: var(--purple-600); }
+
+/* Panel */
+.panel { display: none; }
+.panel.active { display: block; }
+
+/* Flow layout */
+.flow-grid {
+  display: grid;
+  grid-template-columns: 240px 28px minmax(0,1fr) 28px 240px;
+  gap: 0; align-items: start; margin-bottom: 16px;
+}
+.flow-arrow {
+  display: flex; align-items: center; justify-content: center;
+  padding-top: 36px; color: var(--text3); font-size: 18px;
+}
+.col-title {
+  font-size: 11px; font-weight: 600; color: var(--text3);
+  text-transform: uppercase; letter-spacing: .6px;
+  margin-bottom: 10px; padding-left: 2px;
+}
+
+/* Source cards */
+.src {
+  background: var(--bg-card); border: 0.5px solid var(--border);
+  border-radius: 8px; padding: 10px 12px; margin-bottom: 6px;
+  font-size: 11px; line-height: 1.5;
+}
+.src-name { font-weight: 600; font-size: 12px; color: var(--text); margin-bottom: 2px; }
+.src-detail { color: var(--text2); }
+.src-tag {
+  display: inline-block; font-size: 9px; font-weight: 600;
+  padding: 1px 6px; border-radius: 4px; margin-top: 4px;
+}
+.tag-shotgun { background: var(--purple-50); color: var(--purple-800); }
+.tag-16s { background: var(--amber-50); color: var(--amber-800); }
+.tag-ffq { background: var(--teal-50); color: var(--teal-800); }
+.tag-app { background: var(--coral-50); color: var(--coral-800); }
+.tag-recall { background: var(--blue-50); color: var(--blue-800); }
+.tag-nmr { background: var(--green-50); color: var(--green-800); }
+.tag-lcms { background: var(--purple-50); color: var(--purple-800); }
+.tag-metabolon { background: var(--coral-50); color: var(--coral-800); }
+.tag-biocrates { background: var(--amber-50); color: var(--amber-800); }
+.tag-none { background: var(--gray-50); color: var(--gray-800); }
+.tag-planned { background: var(--blue-50); color: var(--blue-800); }
+
+/* Process boxes */
+.proc {
+  border-radius: 10px; padding: 14px 16px; margin-bottom: 8px;
+}
+.proc-title { font-size: 13px; font-weight: 600; margin-bottom: 3px; }
+.proc-desc { font-size: 11px; line-height: 1.55; opacity: .85; }
+
+/* Output cards */
+.out {
+  border-radius: 8px; padding: 9px 12px; margin-bottom: 6px;
+  font-size: 11px; line-height: 1.5;
+}
+.out-name { font-weight: 600; font-size: 12px; margin-bottom: 2px; }
+.out-detail { opacity: .8; }
+.out-yes { background: var(--green-50); color: var(--green-800); }
+.out-partial { background: var(--amber-50); color: var(--amber-800); }
+.out-no { background: var(--gray-50); color: var(--gray-800); }
+
+/* Depth bars */
+.depth-section { margin-top: 18px; }
+.depth-title { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 10px; }
+.depth-row { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; font-size: 11px; }
+.depth-label { min-width: 110px; color: var(--text2); }
+.depth-bar { flex: 1; height: 7px; background: var(--bg2); border-radius: 4px; overflow: hidden; }
+.depth-fill { height: 100%; border-radius: 4px; transition: width .4s ease; }
+.depth-val { min-width: 120px; text-align: right; color: var(--text3); font-size: 10px; }
+
+/* Notes */
+.note {
+  font-size: 12px; color: var(--text2); line-height: 1.6;
+  margin-top: 14px; padding: 12px 14px;
+  background: var(--bg2); border-radius: 8px;
+}
+.note strong { font-weight: 600; color: var(--text); }
+
+/* Cohort overview cards */
+.cohort-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; margin-bottom: 24px; }
+.cohort-card {
+  background: var(--bg-card); border: 0.5px solid var(--border);
+  border-radius: 10px; padding: 12px; text-align: center;
+}
+.cohort-card .cc-name { font-size: 13px; font-weight: 600; }
+.cohort-card .cc-n { font-size: 20px; font-weight: 600; color: var(--purple-600); margin: 4px 0; }
+.cohort-card .cc-country { font-size: 11px; color: var(--text3); }
+.cohort-card .cc-type { font-size: 10px; color: var(--text2); margin-top: 2px; }
+
+/* Responsive */
+@media (max-width: 800px) {
+  .flow-grid { grid-template-columns: 1fr; }
+  .flow-arrow { padding: 8px 0; transform: rotate(90deg); }
+}
+</style>
+</head>
+<body>
+<div class="container" id="app"></div>
+
+<script>
+/* ================================================================
+   DATA — EDIT THIS SECTION TO UPDATE THE DASHBOARD
+   ================================================================
+   Each cohort and data layer is defined below. To add a cohort,
+   add an entry to the cohorts array. To change what's available,
+   edit the relevant layer object.
+
+   Tags for display: shotgun, 16s, ffq, app, recall,
+                     nmr, lcms, metabolon, biocrates, none, planned
+   ================================================================ */
+
+const DATA = {
+
+  lastUpdated: "May 2026",
+
+  cohorts: [
+    { id: "ll",   name: "LifeLines DEEP",    n: "~1,400",  country: "Netherlands",      type: "Population cohort" },
+    { id: "estb", name: "Estonian Biobank",   n: "2,509",   country: "Estonia",           type: "Population biobank" },
+    { id: "fc",   name: "FoCus",             n: "1,795",   country: "Germany (Kiel)",     type: "Observational cohort" },
+    { id: "tw",   name: "TwinsUK",           n: "~4,000",  country: "United Kingdom",     type: "Twin registry" },
+    { id: "hpp",  name: "Pheno.AI / HPP",    n: "~10,000", country: "Israel",             type: "Longitudinal cohort" },
+    { id: "nph",  name: "NPH Study",         n: "~10,000", country: "USA",                type: "RCT (NIH)" },
+    { id: "per",  name: "PERSON",            n: "233",     country: "Netherlands",        type: "RCT (prediabetes)" },
+  ],
+
+  layers: {
+
+    microbiome: {
+      label: "Gut microbiome",
+      icon: "ti-virus",
+      sources: [
+        { cohort: "LifeLines DEEP", tags: ["shotgun"], detail: "Illumina shotgun FASTQ. Raw on HPC, processed taxonomy tables in workspace.", access: "Raw FASTQ on HPC (confirm project access). Processed tables in DRE workspace." },
+        { cohort: "Estonian Biobank", tags: ["shotgun"], detail: "Illumina NovaSeq (15M PE reads/sample). MGI subset n=1,878 (56M reads/sample).", access: "Via Uni Tartu. Dual-platform — deepest sequencing in CPN-Map." },
+        { cohort: "FoCus", tags: ["shotgun", "16s"], detail: "Shotgun + 16S amplicon. Sequenced at IKMB Kiel.", access: "Via collaboration agreement. Both modalities available." },
+        { cohort: "TwinsUK", tags: ["16s"], detail: "16S rRNA amplicon ONLY. No shotgun in CPN-Map scope.", access: "Via KCL data access committee. Some data under embargo." },
+        { cohort: "Pheno.AI", tags: ["shotgun"], detail: "Illumina shotgun. OMNIgene kits, automated extraction (Tecan).", access: "Pheno.AI TRE. Free for academic. Application required." },
+        { cohort: "NPH", tags: ["shotgun"], detail: "Shotgun + metatranscriptomics. UCSD MMC (Knight lab).", access: "All of Us Researcher Workbench. Controlled tier." },
+        { cohort: "PERSON", tags: ["16s", "planned"], detail: "16S available now. Shotgun to be sequenced at IKMB Kiel.", access: "Data sharing agreement with Prof. Blaak. Sequencing via CPN-Map budget." },
+      ],
+      processing: [
+        { title: "Standardized pipeline", desc: "nf-core/mag + DADA2: QC, host-read removal, trimming, taxonomic classification, functional annotation.", color: "purple" },
+        { title: "Cross-study bias correction", desc: "DEBIAS-M for processing-bias correction across sequencing platforms and centers.", color: "purple" },
+        { title: "Depth-dependent outputs", desc: "Taxonomy (all), pathways (shotgun), CAZymes/PULs (shotgun + raw FASTQ), MAGs (>10M reads), strain (>50M reads).", color: "purple" },
+      ],
+      outputs: [
+        { name: "Taxonomic abundances", detail: "Genus/species. All cohorts (shotgun or 16S).", status: "yes" },
+        { name: "Gene pathway abundances", detail: "MetaCyc, KEGG. Shotgun cohorts only.", status: "yes" },
+        { name: "CAZymes / PULs", detail: "Requires raw FASTQ + dbCAN/PULDB. Shotgun only.", status: "yes" },
+        { name: "MAGs", detail: "Metagenome-assembled genomes. Needs >10M reads.", status: "yes" },
+        { name: "SCFA pathway capacity", detail: "Inferred from gene content. Validated with targeted SCFA where available.", status: "partial" },
+        { name: "Strain-level resolution", detail: "Only EstBB-MGI subset (56M reads) reliably supports this.", status: "partial" },
+      ],
+      depths: [
+        { cohort: "LifeLines DEEP",  pct: 80, label: "to CAZymes / MAGs", color: "var(--purple-600)" },
+        { cohort: "Estonian BB",      pct: 95, label: "to strain (MGI subset)", color: "var(--purple-600)" },
+        { cohort: "FoCus",           pct: 80, label: "to CAZymes / MAGs", color: "var(--purple-600)" },
+        { cohort: "TwinsUK",         pct: 25, label: "genus only (16S)", color: "var(--amber-600)" },
+        { cohort: "Pheno.AI / HPP",  pct: 80, label: "to CAZymes / MAGs", color: "var(--purple-600)" },
+        { cohort: "NPH",             pct: 85, label: "to MAGs + metatranscript.", color: "var(--purple-600)" },
+        { cohort: "PERSON",          pct: 30, label: "16S now → shotgun planned", color: "var(--amber-600)" },
+      ],
+      note: "<strong>Key implication for CAZyme analysis:</strong> CAZymes and PUL annotations require raw shotgun FASTQ + dbCAN/PULDB — not derivable from pre-processed taxonomy tables or 16S. TwinsUK is excluded from CAZyme-level analysis. For LifeLines DEEP, confirm HPC access (raw FASTQ) vs. workspace-only (processed tables)."
+    },
+
+    diet: {
+      label: "Dietary intake",
+      icon: "ti-salad",
+      sources: [
+        { cohort: "LifeLines DEEP", tags: ["ffq"], detail: "Flower-FFQ (4-module, ~200 items). NEVO 2011 food DB.", access: "Pre-computed sum scores by WUR in workspace. Raw FFQ responses also available." },
+        { cohort: "Estonian Biobank", tags: ["ffq"], detail: "Core FFQ + microbiome dietary questionnaire (21 items). Estonian food DB.", access: "Via EstBB. Limited granularity — fewer food items than other FFQs." },
+        { cohort: "FoCus", tags: ["ffq"], detail: "Semi-quantitative 12-mo FFQ (~112 items). BLS (German) food DB.", access: "Via cohort PIs. Same FFQ for FoCus_Obesity." },
+        { cohort: "TwinsUK", tags: ["ffq"], detail: "EPIC-Norfolk FFQ (131 items, validated). McCance & Widdowson UK food tables.", access: "Via KCL. Most extensively validated FFQ in CPN-Map." },
+        { cohort: "Pheno.AI", tags: ["app"], detail: "App-based food logs (2-week profiling). Israeli food DB. NOT a traditional FFQ.", access: "High resolution (individual items + timing) but short capture window." },
+        { cohort: "NPH", tags: ["recall"], detail: "ASA24 (24h dietary recall, web-based). USDA FNDDS. Multiple recalls/person.", access: "Via All of Us Workbench. Different paradigm from FFQ." },
+        { cohort: "PERSON", tags: ["ffq"], detail: "Dutch FFQ. NEVO food DB (same as LifeLines).", access: "Via Maastricht. Harmonization with LifeLines straightforward (same DB)." },
+      ],
+      processing: [
+        { title: "Food group mapping", desc: "FoodOn ontology to align 5 national food group systems. Map cohort-specific items to standardized categories.", color: "teal" },
+        { title: "Nutrient derivation", desc: "Macronutrients from national food composition DBs (NEVO, BLS, McCance & W., Estonian, USDA). Energy-adjustment.", color: "teal" },
+        { title: "Index computation", desc: "dietaryindex R package: HEI, aMED, PDI, DII, DASH, PHD. Standardized scoring for all cohorts.", color: "teal" },
+        { title: "App/recall adaptation", desc: "HPP food logs and NPH ASA24 need food-group aggregation before index derivation — custom pipeline.", color: "amber" },
+      ],
+      outputs: [
+        { name: "Diet quality indices", detail: "HEI, aMED, PDI, DII, DASH, PHD. All 7 cohorts.", status: "yes" },
+        { name: "Standardized food groups", detail: "FoodOn-mapped categories. All cohorts.", status: "yes" },
+        { name: "Item-level intake (g/day)", detail: "FFQ cohorts + HPP (via logs). EstBB limited (21 items).", status: "partial" },
+        { name: "Dietary patterns (PCA/clustering)", detail: "Needs sufficient item variation. EstBB may limit this.", status: "partial" },
+        { name: "Meal timing / sequence", detail: "Only HPP (app with timestamps). Not from FFQs.", status: "no" },
+      ],
+      depths: [
+        { cohort: "LifeLines DEEP",  pct: 85, label: "~200 items, food groups + indices", color: "var(--teal-600)" },
+        { cohort: "Estonian BB",      pct: 35, label: "21 items, indices derivable", color: "var(--amber-600)" },
+        { cohort: "FoCus",           pct: 75, label: "~112 items, food groups + indices", color: "var(--teal-600)" },
+        { cohort: "TwinsUK",         pct: 85, label: "131 items, fully validated", color: "var(--teal-600)" },
+        { cohort: "Pheno.AI / HPP",  pct: 90, label: "item-level + timing (app)", color: "var(--teal-600)" },
+        { cohort: "NPH",             pct: 80, label: "full nutrient detail (ASA24)", color: "var(--teal-600)" },
+        { cohort: "PERSON",          pct: 70, label: "Dutch FFQ, same DB as LifeLines", color: "var(--teal-600)" },
+      ],
+      note: "<strong>Biggest challenge:</strong> 5 national food DBs (NEVO, BLS, McCance & W., Estonian, USDA) and 3 assessment paradigms (FFQ, app logs, 24h recall). FAIR4CPN addresses FFQ harmonization. HPP/NPH need separate conversion pipelines — richer data but structurally incompatible with FFQ food-group mappings without explicit conversion rules."
+    },
+
+    bloodMetabolome: {
+      label: "Blood metabolome",
+      icon: "ti-flask",
+      sources: [
+        { cohort: "LifeLines DEEP", tags: ["nmr", "lcms"], detail: "NMR + LC-MS + FT-ICR-MS. 150–1,300 features. Quantitative.", access: "Processed data in workspace." },
+        { cohort: "Estonian Biobank", tags: ["nmr", "biocrates"], detail: "Nightingale NMR (249 biomarkers, full 200k cohort). Biocrates p150 for subsets.", access: "NMR for all; Biocrates for subsets." },
+        { cohort: "FoCus", tags: ["nmr", "lcms"], detail: "LC-MS + FT-ICR-MS + NMR. 150–1,300 features.", access: "Via cohort PIs." },
+        { cohort: "TwinsUK", tags: ["metabolon"], detail: "Metabolon Inc. UHPLC-MS/MS (~1,300 metabolites). Nightingale NMR subsets.", access: "Metabolon proprietary IDs. NMR for overlap." },
+        { cohort: "TREND", tags: ["biocrates"], detail: "Targeted only: Biocrates + SCFA.", access: "Via UKSH Kiel." },
+        { cohort: "PERSON", tags: ["biocrates"], detail: "Targeted only: Biocrates + SCFA.", access: "Via Maastricht." },
+      ],
+      processing: [
+        { title: "Platform alignment", desc: "NMR (Nightingale 249 standardized biomarkers) vs. LC-MS (1,000+ features) vs. Metabolon (proprietary IDs). Different feature spaces.", color: "coral" },
+        { title: "Batch correction", desc: "Reference-material-based ratio method or ComBat across cohorts and platforms.", color: "coral" },
+        { title: "Normalization", desc: "Quantitative (absolute conc.) vs. relative (peak area). Standardize before cross-cohort comparison.", color: "coral" },
+      ],
+      outputs: [
+        { name: "NMR backbone (249 biomarkers)", detail: "Nightingale platform: EstBB + LifeLines. Absolute concentrations, directly comparable.", status: "yes" },
+        { name: "Cross-platform overlap", detail: "~100–200 metabolites identifiable across NMR/LC-MS/Metabolon by HMDB ID.", status: "partial" },
+        { name: "Biocrates panel", detail: "Standardized kit: TwinsUK, TREND, PERSON (~3,900). Directly comparable.", status: "partial" },
+        { name: "Full untargeted union", detail: "Platform-specific features not mappable. Feature count 150–1,300.", status: "no" },
+      ],
+      depths: [
+        { cohort: "LifeLines DEEP",  pct: 90, label: "NMR + LC-MS + FT-ICR-MS", color: "var(--coral-600)" },
+        { cohort: "Estonian BB",      pct: 70, label: "NMR (249) + Biocrates subset", color: "var(--coral-600)" },
+        { cohort: "FoCus",           pct: 85, label: "NMR + LC-MS + FT-ICR-MS", color: "var(--coral-600)" },
+        { cohort: "TwinsUK",         pct: 90, label: "Metabolon (~1,300) + NMR", color: "var(--coral-600)" },
+        { cohort: "TREND",           pct: 30, label: "Biocrates + SCFA only", color: "var(--amber-600)" },
+        { cohort: "PERSON",          pct: 30, label: "Biocrates + SCFA only", color: "var(--amber-600)" },
+      ],
+      note: "<strong>Practical recommendation:</strong> The Nightingale NMR 249-biomarker panel (EstBB + LifeLines DEEP) is the cleanest cross-cohort backbone — same platform, absolute concentrations, same feature space. For DRAGON network inference, consider this as the primary metabolome representation, with Biocrates for targeted validation in disease cohorts (TREND, PERSON)."
+    },
+
+    stoolMetabolome: {
+      label: "Stool metabolome",
+      icon: "ti-test-pipe",
+      sources: [
+        { cohort: "TwinsUK", tags: ["metabolon"], detail: "Metabolon UHPLC-MS/MS fecal metabolomics (~1,810 samples). + Targeted SCFA.", access: "Most comprehensive fecal metabolome in CPN-Map." },
+        { cohort: "FoCus_Obesity", tags: ["planned"], detail: "Untargeted fecal metabolomics to be measured as part of CPN-Map.", access: "Planned — timeline TBD." },
+        { cohort: "PERSON", tags: ["biocrates"], detail: "Targeted SCFA only.", access: "Via Maastricht." },
+        { cohort: "All others", tags: ["none"], detail: "No fecal metabolomics available.", access: "—" },
+      ],
+      processing: [
+        { title: "Very limited scope", desc: "Untargeted only in TwinsUK + FoCus_Obesity* (~3,350). SCFA in TwinsUK + PERSON (~4,216). Too sparse for full cross-cohort modelling.", color: "amber" },
+      ],
+      outputs: [
+        { name: "SCFA profiles", detail: "Acetate, propionate, butyrate. TwinsUK + PERSON.", status: "partial" },
+        { name: "Full fecal metabolome", detail: "TwinsUK-specific. Not cross-cohort.", status: "no" },
+      ],
+      depths: [
+        { cohort: "TwinsUK",       pct: 95, label: "Metabolon untargeted + SCFA", color: "var(--coral-600)" },
+        { cohort: "FoCus_Obesity",  pct: 10, label: "planned (CPN-Map)", color: "var(--blue-600)" },
+        { cohort: "PERSON",         pct: 25, label: "SCFA only", color: "var(--amber-600)" },
+      ],
+      note: "<strong>Strategic note:</strong> Fecal metabolomics functions as a TwinsUK-specific enrichment layer rather than a cross-cohort feature. Pope et al. 2025 (diet→fecal metabolome→microbiome in TwinsUK) is the reference for what's achievable within a single well-covered cohort."
+    },
+  }
+};
+
+/* ================================================================
+   RENDERING — You shouldn't need to edit below this line
+   ================================================================ */
+
+function renderTagHTML(tag) {
+  const cls = 'tag-' + tag;
+  const labels = {
+    shotgun: 'SHOTGUN', '16s': '16S', ffq: 'FFQ', app: 'APP LOGS',
+    recall: '24H RECALL', nmr: 'NMR', lcms: 'LC-MS', metabolon: 'METABOLON',
+    biocrates: 'BIOCRATES', none: 'NONE', planned: 'PLANNED'
+  };
+  return `<span class="src-tag ${cls}">${labels[tag] || tag}</span>`;
+}
+
+function renderPanel(key, layer) {
+  const procColors = { purple: 'purple', teal: 'teal', coral: 'coral', amber: 'amber' };
+
+  let srcHTML = layer.sources.map(s => `
+    <div class="src">
+      <div class="src-name">${s.cohort}</div>
+      <div class="src-detail">${s.detail}</div>
+      <div style="margin-top:3px;font-size:10px;color:var(--text3)"><i class="ti ti-lock" style="font-size:12px;vertical-align:-1px"></i> ${s.access}</div>
+      <div>${s.tags.map(renderTagHTML).join(' ')}</div>
+    </div>`).join('');
+
+  let procHTML = layer.processing.map(p => `
+    <div class="proc" style="background:var(--${p.color}-50);color:var(--${p.color}-800)">
+      <div class="proc-title">${p.title}</div>
+      <div class="proc-desc">${p.desc}</div>
+    </div>`).join('');
+
+  let outHTML = layer.outputs.map(o => `
+    <div class="out out-${o.status}">
+      <div class="out-name">${o.name}</div>
+      <div class="out-detail">${o.detail}</div>
+    </div>`).join('');
+
+  let depthHTML = layer.depths ? layer.depths.map(d => `
+    <div class="depth-row">
+      <span class="depth-label">${d.cohort}</span>
+      <div class="depth-bar"><div class="depth-fill" style="width:${d.pct}%;background:${d.color}"></div></div>
+      <span class="depth-val">${d.label}</span>
+    </div>`).join('') : '';
+
+  return `
+    <div class="panel" id="panel-${key}">
+      <div class="flow-grid">
+        <div>
+          <div class="col-title">Raw inputs per cohort</div>
+          ${srcHTML}
+        </div>
+        <div class="flow-arrow"><i class="ti ti-arrow-right"></i></div>
+        <div>
+          <div class="col-title">Processing &amp; harmonization</div>
+          ${procHTML}
+        </div>
+        <div class="flow-arrow"><i class="ti ti-arrow-right"></i></div>
+        <div>
+          <div class="col-title">Derivable common outputs</div>
+          ${outHTML}
+        </div>
+      </div>
+      ${depthHTML ? `<div class="depth-section"><div class="depth-title">Processing depth reachable per cohort</div>${depthHTML}</div>` : ''}
+      <div class="note">${layer.note}</div>
+    </div>`;
+}
+
+function render() {
+  const app = document.getElementById('app');
+  const layerKeys = Object.keys(DATA.layers);
+
+  let cohortCards = DATA.cohorts.map(c => `
+    <div class="cohort-card">
+      <div class="cc-name">${c.name}</div>
+      <div class="cc-n">${c.n}</div>
+      <div class="cc-country">${c.country}</div>
+      <div class="cc-type">${c.type}</div>
+    </div>`).join('');
+
+  let navBtns = layerKeys.map((k, i) => `
+    <button class="nav-btn ${i === 0 ? 'active' : ''}" data-panel="${k}">
+      <i class="${DATA.layers[k].icon}" style="font-size:14px;vertical-align:-1px;margin-right:4px"></i>
+      ${DATA.layers[k].label}
+    </button>`).join('');
+
+  let panels = layerKeys.map(k => renderPanel(k, DATA.layers[k])).join('');
+
+  app.innerHTML = `
+    <h1>CPN-Map — Biobank data matrix</h1>
+    <div class="subtitle">Data accessibility, formats, and harmonization pathways across all cohorts</div>
+    <div class="last-updated">Last updated: ${DATA.lastUpdated} · Edit the DATA object in this file to update</div>
+    <div class="cohort-grid">${cohortCards}</div>
+    <div class="nav">${navBtns}</div>
+    ${panels}
+  `;
+
+  // Activate first panel
+  document.querySelector('.panel').classList.add('active');
+
+  // Tab switching
+  document.querySelectorAll('.nav-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('panel-' + btn.dataset.panel).classList.add('active');
+    });
+  });
+}
+
+render();
+</script>
+</body>
+</html>
